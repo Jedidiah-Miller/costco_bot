@@ -1,66 +1,51 @@
-import time
-from request_handler import RequestHandler
-from html_parser import HtmlParser
-from notifications import Twilio
-from endpoints import product_page, order_online
+from Thread import Job, signal_handler, ProgramKilled
+from bot import Bot
+import time, signal
+from datetime import timedelta, datetime
 
 
 
-class Bot:
+class ShoppingBot:
 
 
-    def __init__(self) -> None:
-        self.session = RequestHandler()
-        self.parser = HtmlParser()
-        self.count = 0
+    def __init__(self):
+        self.bot = Bot()
+        self.delay_seconds = 30
+        self.count = 1
 
 
-    def check_item_in_stock(self, page_html):
-        product_not_found_title = self.parser.get_title(page_html)
-        return 'product not found' not in product_not_found_title.string.lower()
+    def display_info(self):
+        print('--------- INFO ---------', self.count)
+        print('time:', datetime.now().strftime("%m/%d/%Y %H:%M:%S"))
 
+        self.count += 1
 
-    def check_item_in_stock_order_by_number(self, page_html):
-        out_of_stock_span = self.parser.get_class_elements(page_html, tag="span", class_name="server-error")
-        return len(out_of_stock_span) == 0
-
-
-    def check_product_page(self):
-        page_html = self.session.get_page_html(product_page)
-        if self.check_item_in_stock(page_html):
-            self.send_notification()
-            print('In stock!')
-        else:
-            print("Out of stock still -- product page")
-
-
-    def check_order_by_item_number_page(self):
-        page_html = self.session.get_page_html(order_online)
-        if self.check_item_in_stock_order_by_number(page_html):
-            self.send_notification()
-            print('In stock!')
-        else:
-            print("Out of stock still -- order by item number")
-
-
-    def check_inventory(self):
-        self.check_product_page()
-        self.check_order_by_item_number_page()
-
-
-    def send_notification(self):
-        twilio_client = Twilio()
-        twilio_client.send_notification()
 
     def run(self):
+        signal.signal(signal.SIGTERM, signal_handler)
+        signal.signal(signal.SIGINT, signal_handler)
+        # multiple jobs below
+        jobs = [
+            Job(interval=timedelta(seconds=self.delay_seconds), execute=self.display_info),
+            Job(interval=timedelta(seconds=self.delay_seconds), execute=self.bot.check_product_page),
+            Job(interval=timedelta(seconds=self.delay_seconds), execute=self.bot.check_order_by_item_number_page)
+        ]
+
+        for job in jobs:
+            job.start()
+
         while True:
-            print('---------------------', self.count)
-            self.check_inventory()
-            self.count += 1
-            time.sleep(30)  # Wait a minute and try again
+            try:
+                time.sleep(0.1)
+            except ProgramKilled as e:
+                print("Program killed: running cleanup code")
+                print(e)
+                for job in jobs:
+                    job.stop()
+                break
 
 
 
 
-bot = Bot()
+bot = ShoppingBot()
 bot.run()
