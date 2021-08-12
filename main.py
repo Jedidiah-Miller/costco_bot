@@ -7,9 +7,15 @@ from endpoints import product_page, order_online
 
 import secrets  # from secrets.py in this folder
 
+def headers():
+    return {
+        "Referer": "https://costco.com/",
+        "Accept": "application/json",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36"
+    }
+
 def get_page_html(url):
-    headers = {"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36"}
-    page = requests.get(url, headers=headers)
+    page = requests.get(url, headers=headers())
     return page.content
 
 
@@ -57,8 +63,11 @@ def check_inventory():
 
 
 def run():
+    count = 0
     while True:
+        print('---------------------', count)
         check_inventory()
+        count += 1
         time.sleep(30)  # Wait a minute and try again
 
 
