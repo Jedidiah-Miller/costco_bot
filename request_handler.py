@@ -20,11 +20,24 @@ class RequestHandler:
         print('*** INITIALIZED REQUESTS SESSION --> ', self.session)
 
 
+    def get(self, url):
+        '''
+        safe get method, we must catch exceptions to skip this request
+            - return None on timeout or fail
+        '''
+        try:
+            return self.session.get(url, timeout=10)
+        except (requests.exceptions.RequestException, Exception) as e:
+            print('GET EXCEPTION:')
+            print(e)
+            return None
+
+
     def get_login(self, url = logon_form):
-        return self.session.get(url)
+        return self.get(url)
 
 
     def get_page_html(self, url = product_page):
-        page = self.session.get(url)
-        return page.content
+        page = self.get(url)
+        return page.content if page is not None else None
 

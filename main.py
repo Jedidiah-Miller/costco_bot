@@ -37,7 +37,7 @@ class ShoppingBot:
         while True:
             try:
                 time.sleep(0.1)
-            except ProgramKilled as e:
+            except (ProgramKilled, Exception) as e:
                 print("Program killed: running cleanup code")
                 print(e)
                 for job in jobs:

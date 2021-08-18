@@ -26,6 +26,10 @@ class Bot:
 
     def check_product_page(self):
         page_html = self.session.get_page_html(product_page)
+        if page_html == None:
+            print('FAILED TO GET PAGE_HTML')
+            return
+
         if self.check_item_in_stock(page_html):
             self.send_notification()
             print('In stock!')
@@ -35,6 +39,10 @@ class Bot:
 
     def check_order_by_item_number_page(self):
         page_html = self.session.get_page_html(order_online)
+        if page_html == None:
+            print('failed to get page_html')
+            return
+
         if self.check_item_in_stock_order_by_number(page_html):
             self.send_notification()
             print('In stock!')
